@@ -186,7 +186,7 @@ def config():
 
     escolha = opcoes_loop(opcoes_config)
 
-    if escolha == 1:
+    if escolha == 0:
 
         configuracoes = carregar_configuracoes()
 
@@ -194,7 +194,7 @@ def config():
             f"Configurações atuais: {configuracoes}"
         )
 
-    elif escolha == 2:
+    elif escolha == 1:
 
         novo_caminho = typer.prompt(
             "Digite o novo caminho para as predefinições"
