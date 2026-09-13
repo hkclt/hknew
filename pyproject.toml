@@ -1,0 +1,49 @@
+[project]
+name = "hknew"
+version = "0.1.0"
+description = "A CLI to scaffold Python projects with Poetry, Ruff, Pytest and Taskipy."
+authors = [
+    {name = "hkclt", email = "gabrielfernandesandrade13@outlook.com"}
+]
+license = "MIT"
+readme = "README.md"
+requires-python = ">=3.10,<4.0"
+dependencies = [
+    "typer>=0.27.2,<0.28.0",
+    "tomlkit (>=0.15.1,<0.16.0)"
+]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.16.0,<0.17.0",
+    "pytest>=9.0.0,<10.0.0",
+    "pytest-cov>=7.0.0,<8.0.0",
+    "taskipy>=1.14.0,<2.0.0"
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "PL", "PT"]
+
+[tool.ruff.format]
+quote-style = "single"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+addopts = "-p no:warnings"
+
+[tool.taskipy.tasks]
+lint = "ruff check"
+format = "ruff format"
+format_check = "ruff format --check"
+test = "pytest -s -x -vv"
+coverage = "pytest --cov=hknew --cov-report=html"
+
+[tool.poetry.scripts]
+hknew = "hknew.cli:app"
