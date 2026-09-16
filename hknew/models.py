@@ -1,77 +1,48 @@
-import json
+import os
 from pathlib import Path
-from re import A
-import subprocess
-import sys
-import tomlkit
 import typer
-from tomlkit import parse, load
+from tomlkit import parse
+import platform
+import json
 
 
-def caminho_config() -> Path:
-    config_dir = Path.home() / '.config' / 'hknew'
-
-    config_dir.mkdir(
-        parents=True,
-        exist_ok=True,
+def caminho_config():
+    sistema = platform.system()
+    if sistema == 'Linux':
+        config_dir = Path.home() / '.config' / 'hknew'
+    elif sistema == 'Windows':
+        appdata = os.getenv('appdata')
+        if appdata is None:
+            raise RuntimeError('APPDATA não existe')
+        else:
+            config_dir = Path(appdata)
+            config_dir = config_dir / 'hknew'
+    else:
+        raise RuntimeError(
+        'Sistema não suportado. Abra uma issue no GitHub.'
     )
-
-    return config_dir / 'config.json'
-
-
-def caminho_predefinicoes_padrao() -> Path:
-    return Path(__file__).resolve().parent / 'predefinicoes'
+    return config_dir
 
 
 def carregar_configuracoes() -> dict:
     config = caminho_config()
-
-    try:
-        with config.open('r', encoding='utf-8') as arquivo:
-            return json.load(arquivo)
-
-    except FileNotFoundError:
-        typer.echo('Arquivo de configuração não encontrado. Usando configurações padrão.')
-
-        return {'caminho_predefinicao': str(caminho_predefinicoes_padrao())}
-
-    except json.JSONDecodeError:
-        typer.echo('Erro ao decodificar o arquivo de configuração. Usando configurações padrão.')
-
-        return {'caminho_predefinicao': str(caminho_predefinicoes_padrao())}
+    config = config / 'config.json'
+    with open(config, 'r', encoding='utf-8') as arq:
+        dados = json.load(arq)
+        return dados
 
 
-def alterar_caminho_predefinicoes(novo_caminho: str) -> None:
-    configuracoes = carregar_configuracoes()
+def listar_predefinicoes():
+    caminho = caminho_config() / 'presets'
 
-    configuracoes['caminho_predefinicao'] = novo_caminho
-
-    with caminho_config().open('w', encoding='utf-8') as arquivo:
-        json.dump(
-            configuracoes,
-            arquivo,
-            indent=4,
+    if not caminho.exists() or not caminho.is_dir():
+        typer.echo(
+            f"Caminho das predefinições '{caminho}' "
+            "não encontrado ou não é um diretório."
         )
-
-
-def caminho_predefinicoes() -> str:
-    configuracoes = carregar_configuracoes()
-
-    return configuracoes['caminho_predefinicao']
-
-
-def listar_predefinicoes(caminho=None):
-    if caminho is None:
-        caminho = caminho_predefinicoes()
-
-    predefinicoes_path = Path(caminho)
-
-    if not predefinicoes_path.exists() or not predefinicoes_path.is_dir():
-        typer.echo(f"Caminho das predefinições '{caminho}' não encontrado ou não é um diretório.")
-
         return [], []
 
-    tomls = list(predefinicoes_path.glob('*.toml'))
+    tomls = list(caminho.glob('*.toml'))
 
     nomes = []
     caminhos = []
@@ -83,15 +54,53 @@ def listar_predefinicoes(caminho=None):
     return nomes, caminhos
 
 
-def carregar_predefinicao(caminho: Path):
-    conteudo = caminho.read_text(encoding='utf-8')
-
-    return parse(conteudo)
-
-
 def mesclar_toml(destino, origem):
     for chave, valor in origem.items():
         if chave == 'project':
             continue
 
         destino[chave] = valor
+
+
+def criar_configuracoes():
+    caminho = caminho_config()
+    presets = caminho / 'presets'
+    arquivo_config = caminho / 'config.json'
+    preset_default = presets / 'default.toml'
+    config_basica_json = {'language': 'pt-BR'}
+    config_default_toml = """
+[project]
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=6.0.0",
+    "ruff>=0.12.0",
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.taskipy.tasks]
+test = "pytest"
+lint = "ruff check ."
+format = "ruff format ."
+    """
+    caminho.mkdir(parents=True, exist_ok=True)
+    (caminho / 'presets').mkdir(exist_ok=True)
+    (caminho / 'languages').mkdir(exist_ok=True)
+    if not arquivo_config.exists():
+        with open(arquivo_config, 'w', encoding='utf-8') as arq:
+            json.dump(config_basica_json, arq, indent=4)
+    if not preset_default.exists():
+        with open(preset_default, 'w', encoding='utf-8') as arq:
+            arq.write(config_default_toml)
+
+
+def carregar_predefinicao(caminho: Path):
+    conteudo = caminho.read_text(encoding='utf-8')
+    return parse(conteudo)

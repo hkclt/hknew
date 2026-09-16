@@ -1,9 +1,6 @@
 import re
 from pathlib import Path
-import subprocess
-import sys
 import typer
-
 from .criar import (
     criar_pasta,
     criar_toml,
@@ -13,12 +10,11 @@ from .criar import (
     remover_dependencias_toml,
 )
 from .models import (
-    alterar_caminho_predefinicoes,
-    carregar_configuracoes,
+    criar_configuracoes,
     listar_predefinicoes,
 )
 from .toml import gerar_toml
-from .uteis import opcoes_limit3, opcoes_loop
+from .uteis import opcoes, opcoes_loop
 
 
 app = typer.Typer()
@@ -34,6 +30,8 @@ def main():
 
 @app.command()
 def criar(project_name: str):
+    criar_configuracoes()
+    num_2 = 2
 
     while True:
         version = typer.prompt(
@@ -81,8 +79,7 @@ def criar(project_name: str):
                 'predefinicao': False,
             }
 
-            escolha = opcoes_limit3(['Nenhuma', 'Manual', 'Ver predefinições'])
-
+            escolha = opcoes_loop(['Nenhuma', 'Manual', 'Ver predefinições'])
             if escolha == 0:
                 status['nenhuma'] = True
 
@@ -109,7 +106,7 @@ def criar(project_name: str):
 
                 break
 
-            elif escolha == 2:
+            elif escolha == num_2:
                 status['predefinicao'] = True
 
                 nomes, caminhos = listar_predefinicoes()
@@ -161,7 +158,7 @@ def criar(project_name: str):
         break
 
 
-@app.command()
+"""@app.command()
 def configurar():
 
     opcoes_config = [
@@ -175,13 +172,7 @@ def configurar():
         configuracoes = carregar_configuracoes()
 
         typer.echo(f'Configurações atuais: {configuracoes}')
-
-    elif escolha == 1:
-        novo_caminho = typer.prompt('Digite o novo caminho para as predefinições').strip()
-
-        alterar_caminho_predefinicoes(novo_caminho)
-
-        typer.echo(f'Caminho das predefinições alterado para: {novo_caminho}')
+"""
 
 
 @app.command()

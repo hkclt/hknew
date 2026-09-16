@@ -49,7 +49,6 @@ def opcoes_loop(opcoes):
             typer.echo('Valor inválido, tente novamente')
         else:
             if 0 <= escolha < len(opcoes):
-                typer.echo(f'Opção selecionada: {escolha}')
                 return escolha
             else:
                 typer.echo('Valor inválido, tente novamente')

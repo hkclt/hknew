@@ -1,3 +1,4 @@
+import platform
 from pathlib import Path
 import subprocess
 import sys
@@ -5,6 +6,30 @@ import tomlkit
 import typer
 from tomlkit import load
 import venv
+
+
+def pegar_python_venv(diretorio: Path) -> Path:
+    sistema = platform.system()
+    venv_dir = diretorio / '.venv'
+
+    if sistema == 'Linux':
+        python = venv_dir / 'bin' / 'python'
+    elif sistema == 'Windows':
+        python = venv_dir / 'Scripts' / 'python.exe'
+    else:
+        typer.echo(
+            'Sistema invalido, suporte nao desenvolvido, '
+            'abra uma issue no github'
+        )
+        raise typer.Exit(code=1)
+
+    if not python.exists():
+        raise FileNotFoundError(
+            f'Python do ambiente virtual nao encontrado: {python}'
+        )
+
+    return python
+
 
 
 def criar_pasta(nome: str) -> Path:
@@ -38,7 +63,7 @@ def criar_venv(diretorio: Path) -> Path:
 
 
 def instalar_dependencias(caminho_projeto: Path):
-    python = caminho_projeto / '.venv' / 'bin' / 'python'
+    python = pegar_python_venv(caminho_projeto)
 
     subprocess.run(
         [
@@ -54,7 +79,8 @@ def instalar_dependencias(caminho_projeto: Path):
 
 
 def baixar_dependencia(dependencia):
-    resultado = subprocess.run([sys.executable, '-m', 'pip', 'install', dependencia], check=False)
+    python = pegar_python_venv(Path.cwd())
+    resultado = subprocess.run([python, '-m', 'pip', 'install', dependencia], check=False)
     if resultado.returncode == 0:
         return True
     else:
@@ -80,7 +106,8 @@ def adicionar_dependencias_toml(*dependencias):
 
 
 def remover_dependencia(dependencia):
-    resultado = subprocess.run([sys.executable, '-m', 'pip', 'uninstall', dependencia], check=False)
+    python = pegar_python_venv(Path.cwd())
+    resultado = subprocess.run([python, '-m', 'pip', 'uninstall', dependencia], check=False)
     if resultado.returncode == 0:
         return True
     else:
@@ -103,3 +130,16 @@ def remover_dependencias_toml(*dependencias):
         typer.echo('Todas dependencias escolhidas desisntaladas')
     with open(arquivo_toml, 'w', encoding='utf-8') as f:
         tomlkit.dump(dados, f)
+
+
+def encontrar_toml():
+    caminho = Path.cwd()
+    while True:
+        antigo_caminho = caminho
+        procura = caminho / 'pyproject.toml'
+        if procura.exists():
+            return procura
+        caminho = caminho.parent
+        if caminho == antigo_caminho:
+            return None
+
