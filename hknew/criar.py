@@ -1,14 +1,19 @@
 import platform
-from pathlib import Path
 import subprocess
-import sys
+import venv
+from pathlib import Path
+
 import tomlkit
 import typer
 from tomlkit import load
-import venv
+
+from hknew.idioma import carregar_idioma
+from hknew.models import vereficar_integride
 
 
 def pegar_python_venv(diretorio: Path) -> Path:
+    vereficar_integride()
+    idioma = carregar_idioma()
     sistema = platform.system()
     venv_dir = diretorio / '.venv'
 
@@ -17,19 +22,13 @@ def pegar_python_venv(diretorio: Path) -> Path:
     elif sistema == 'Windows':
         python = venv_dir / 'Scripts' / 'python.exe'
     else:
-        typer.echo(
-            'Sistema invalido, suporte nao desenvolvido, '
-            'abra uma issue no github'
-        )
+        typer.echo(idioma['arquivos_funcao']['criar']['pegar_python_venv']['mensagem_sistema_invalido'])
         raise typer.Exit(code=1)
 
     if not python.exists():
-        raise FileNotFoundError(
-            f'Python do ambiente virtual nao encontrado: {python}'
-        )
+        raise FileNotFoundError(f'{idioma["arquivos_funcao"]["criar"]["pegar_python_venv"]["ambiente_virtual_nao_encontrado"]}')
 
     return python
-
 
 
 def criar_pasta(nome: str) -> Path:
@@ -88,19 +87,21 @@ def baixar_dependencia(dependencia):
 
 
 def adicionar_dependencias_toml(*dependencias):
+    vereficar_integride()
+    idioma = carregar_idioma()
     arquivo_toml = Path.cwd() / 'pyproject.toml'
     with open(arquivo_toml, 'r', encoding='utf-8') as f:
         dados = load(f)
         for dependencia in dependencias:
             if dependencia in dados['project']['dependencies']:
-                typer.echo(f'A {dependencia} ja existe')
+                typer.echo(f'{idioma["arquivos_funcao"]["criar"]["adicionar_dependencias_toml"]["mensagem_dependencia_ja_existe"]}')
             else:
                 baixado = baixar_dependencia(dependencia)
                 if baixado:
                     dados['project']['dependencies'].append(dependencia)
                 else:
-                    return 'algo deu de errado, por favor analise ou tente novamente'
-        typer.echo('Todas novas dependencias instaladas')
+                    return idioma['arquivos_funcao']['criar']['adicionar_dependencias_toml']['erro_algo_deu_errado']
+        typer.echo(idioma['arquivos_funcao']['criar']['adicionar_dependencias_toml']['mensagem_dependencias_instaladas'])
     with open(arquivo_toml, 'w', encoding='utf-8') as f:
         tomlkit.dump(dados, f)
 
@@ -115,6 +116,8 @@ def remover_dependencia(dependencia):
 
 
 def remover_dependencias_toml(*dependencias):
+    vereficar_integride()
+    idioma = carregar_idioma()
     arquivo_toml = Path.cwd() / 'pyproject.toml'
     with open(arquivo_toml, 'r', encoding='utf-8') as f:
         dados = load(f)
@@ -124,10 +127,10 @@ def remover_dependencias_toml(*dependencias):
                 if remover:
                     dados['project']['dependencies'].remove(dependencia)
                 else:
-                    return 'algo deu de errado, por favor analise ou tente novamente'
+                    return idioma['arquivos_funcao']['criar']['remover_dependencias_toml']['mensagem_erro']
             else:
-                typer.echo(f'A dependencia {dependencia} Nao esta registrada no projeto')
-        typer.echo('Todas dependencias escolhidas desisntaladas')
+                typer.echo(f'{idioma["arquivos_funcao"]["criar"]["remover_dependencias_toml"]["mensagem_dependencia_nao_registrada"]}')
+        typer.echo(idioma['arquivos_funcao']['criar']['remover_dependencias_toml']['mensagem_todas_dependencias_removidas'])
     with open(arquivo_toml, 'w', encoding='utf-8') as f:
         tomlkit.dump(dados, f)
 
@@ -142,4 +145,3 @@ def encontrar_toml():
         caminho = caminho.parent
         if caminho == antigo_caminho:
             return None
-

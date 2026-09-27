@@ -1,4 +1,5 @@
-from tomlkit import document, table, dumps
+from tomlkit import document, dumps, table
+
 from .models import carregar_predefinicao, mesclar_toml
 
 toml = document()
