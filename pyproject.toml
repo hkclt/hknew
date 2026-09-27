@@ -1,6 +1,6 @@
 [project]
 name = "hknew"
-version = "0.2.0"
+version = "0.3.0"
 description = "A CLI to scaffold Python projects with Poetry, Ruff, Pytest and Taskipy."
 authors = [
     {name = "hkclt", email = "gabrielfernandesandrade13@outlook.com"}
